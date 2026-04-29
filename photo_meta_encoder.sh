@@ -5,7 +5,13 @@ script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 . "$script_dir"/common.sh
 
 print_help() {
-    printf "TODO\n"
+    printf "This updates photo exif data with values found in json metadafiles.\n"
+    printf "Directories represent google photo albums.  The metadata json files\n"
+    printf "contain a 'title' element.  All photos in the album directory are\n"
+    printf "re-enoided with exif tool using -Headline as the 'title'.\n"
+    printf "Individual jpeg/png/etc files have json sidecar json metadata files.\n"
+    printf "From sidecar files, the 'description' json element is encoded as\n"
+    printf "the -Description element in exif.\n"
     printf "One input is required.\n"
     printf "\t-i <input_directory>.  Parent of \"Google Photos\".\n"
 }
@@ -100,6 +106,17 @@ check_metadata_keys() {
     done
 } 
 
+add_exif_tag() {
+    cmd="$1"
+    key="$2"
+    val="$3"
+
+    if [ "$cmd" != "" ]; then
+        cmd="$cmd "
+    fi
+    printf "%s-%s=%s" "$cmd" "$key" "\"$val\""
+}
+
 parse_args "$@"
 validate_args
 
@@ -122,8 +139,6 @@ image_extensions="(jpg|JPG|jpeg|JPEG|png|PNG|mp4|MP4)"
 
 album_count=0
 for photo_dir in "${photo_array[@]}"; do
-    #printf "Directory[$photo_dir]\n"
-
     # Try to get the album title from metadata.json
     album_count=$((album_count + 1))
     album_title=""
@@ -146,7 +161,7 @@ for photo_dir in "${photo_array[@]}"; do
 
     # For each meatdata file in the dir.
     for photo_meta_file in "${meta_array[@]}"; do
-        result="Meta[$photo_meta_file]"
+        result="\tMeta[$photo_meta_file]"
         # printf "\t%s\n" "$photo_meta_file"
         # Check for the json tags and report unknowns.
         check_metadata_keys "$photo_meta_file"
@@ -177,22 +192,46 @@ for photo_dir in "${photo_array[@]}"; do
       # Find a matching photo
       photo=$(find "$path" -type f \( -iname "$photo_basename.jpg" -o -iname "$photo_basename.mp4" -o -iname "$photo_basename.png" -o -iname "$photo_basename.jpeg" \))
       if [ "$?" -ne "0" ]; then
-          printf "\t%s" "$result"
+          printf "\t%s" "$result "
           print_error " Find error."
           continue
       fi
 
       if [ "$photo" == "" ]; then
           # Failed to find a photo to match the json.
-          printf "\t%s" "$result"
-          print_error " Unmatched json meta file."
+          printf "%b" "$result "
+          print_error "Unmatched json meta file."
           continue
       fi
 
-      Parase meta from the file then encode in the photo.
-      result="$result Paired[$photo]"
-      printf "\t%s\n" "$result"
-  done
+      result="$result\n\t\tPaired[$photo]"
+
+      # Get the photo description and headline.
+      photo_description=$(cat "$photo_meta_file" | yq -e '.description' 2>/dev/null)
+
+    # Build the exiftool command.
+    exifcmd=""
+    if [ "$photo_description" != "" ]; then
+        exifcmd=$(add_exif_tag "$exifcmd" "Description" "$photo_description")
+    fi
+    if [ "$album_title" != "" ]; then
+        exifcmd=$(add_exif_tag "$exifcmd" "Headline" "$album_title")
+    fi
+
+    if [ "$exifcmd" == "" ]; then
+        printf "%b" "$result [OK]"
+        continue
+    fi
+
+    result="$result\n\t\tExif[$exifcmd]"
+    res=$(exiftool -overwrite_original "$exifcmd" "$photo")
+    if [ "$?" == "0" ]; then
+        printf "%b" "$result [OK]\n"
+    else
+        printf "%b" "$result "
+        print_error "Exiftool error."
+    fi
+done
 done
 
 printf "AlbumCount[%d]\n" "$album_count"
