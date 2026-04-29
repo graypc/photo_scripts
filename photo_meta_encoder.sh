@@ -187,7 +187,7 @@ for photo_dir in "${photo_array[@]}"; do
       # Remove the path from the basename.  Use '|' delimiter.
       # Example: "path/to/photo/mountanins"
       # becomes "mountains"
-      photo_basename=$(echo "$photo_basename" | sed -E "s|$path||")
+      photo_basename=$(echo "$photo_basename" | sed "s|$path||")
 
       # Find a matching photo
       photo=$(find "$path" -type f \( -iname "$photo_basename.jpg" -o -iname "$photo_basename.mp4" -o -iname "$photo_basename.png" -o -iname "$photo_basename.jpeg" \))
@@ -204,8 +204,6 @@ for photo_dir in "${photo_array[@]}"; do
           continue
       fi
 
-      result="$result\n\t\tPaired[$photo]"
-
       # Get the photo description and headline.
       photo_description=$(cat "$photo_meta_file" | yq -e '.description' 2>/dev/null)
 
@@ -219,7 +217,7 @@ for photo_dir in "${photo_array[@]}"; do
     fi
 
     if [ "$exifcmd" == "" ]; then
-        printf "%b" "$result [OK]"
+        printf "%b" "$result [OK]\n"
         continue
     fi
 
