@@ -44,7 +44,6 @@ validate_args() {
     fi
 }
 
-
 parse_args "$@"
 validate_args
 
@@ -53,7 +52,7 @@ printf "Starting with input[%s]\n" "$input_dir"
 # Find all the jpeg and png files recursively.
 input_photos=$(find "$input_dir" -type f \( -iname "*.jpg" -o -iname "*.mp4" -o -iname "*.png" -o -iname "*.jpeg" \))
 if [ "$?" -ne "0" ]; then
-    printf "Error.  Unable to find photos\n"
+    print_error "Unable to find photos."
     exit 0
 fi
 
