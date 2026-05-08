@@ -7,8 +7,8 @@ print_help() {
     printf "\thttps://github.com/iamsanmith/MetaSort\n"
     printf "Input photos to this script do not have associated metadata files so MetaSort\n"
     printf "cannot process them.\n"
-    printf "If creation date/time is not availalbe in the exif the photo is moved to an\n"
-    printf "\"unknown\" directory.\n"
+    printf "If the creation date/time is available from exif the photo is moved, not coppied.\n"
+    printf "If the creation date/time is not availalbe in the photo is left.\n"
     printf "Two inputs are required\n"
     printf "\t-i <input_directory>.  Subdirectories are allowed.\n"
     printf "\t-o <output_directory>.  Any existing files will be removed.\n"
@@ -117,11 +117,18 @@ output_dir=${output_dir%/}
 # Clean the output directory.
 rm -rf "${output_dir}"/*
 
+# Assuming this is running on a mac.
+res=$(dot_clean "$input_dir")
+if [ "$?" -ne "0" ]; then
+    printf "Error.  Unable to run dot_clean\n"
+    exit 1
+fi
+
 # Find all the jpeg and png files recursively.
 input_photos=$(find "$input_dir" -type f \( -iname "*.jpg" -o -iname "*.mp4" -o -iname "*.png" -o -iname "*.jpeg" \))
 if [ "$?" -ne "0" ]; then
     printf "Error.  Unable to find photos\n"
-    exit 0
+    exit 1
 fi
 
 # Split the input into an array.
@@ -144,9 +151,13 @@ for photo in "${input_array[@]}"; do
     # Get the file extension
     extension="${photo##*.}"
 
+    # Subdirectory to match the output of MetaSort.
+    subdir="photos"
+
     # Get the creation date from the file.
     if [ "$extension" = "mp4" ] || [ "$extension" = "MP4" ]; then 
         datetime=$(exiftool -CreateDate "$photo")
+        subdir="videos"
     else
         datetime=$(exiftool -DateTimeOriginal "$photo")
     fi
@@ -182,8 +193,8 @@ for photo in "${input_array[@]}"; do
 
     result="$result Year[$year] Month[$month]"
 
-    mkdir -p "./$output_dir/$year/$month"
-    cp "$photo" "./$output_dir/$year/$month/$photo_name"
+    mkdir -p "$output_dir/$subdir/$year/$month"
+    mv "$photo" "$output_dir/$subdir/$year/$month/$photo_name"
     printf "%s\n" "$result"
 done
 

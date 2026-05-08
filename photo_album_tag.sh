@@ -1,10 +1,7 @@
 #!/bin/sh
 
-# Add a searchable caption to the image.
-exiftool -Description='my_work' -overwrite_original infinite_harvest.jpg
-
 print_help() {
-    printf "This script uses exiftool to sort a directly of photos by year and month.\n"
+    printf "This script uses exiftool to sort a directory of photos by year and month.\n"
     printf "The output directory structure is intended to mimic MetaSort which uses \n"
     printf "google takeout json metadata to determine the photo's original creation date/time.\n"
     printf "\thttps://github.com/iamsanmith/MetaSort\n"
