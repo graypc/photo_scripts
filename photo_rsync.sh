@@ -57,10 +57,24 @@ print_error() {
     printf "${red}Error.${reset}  $1\n"
 }
 
+# Added trailing '/' if needed to the path.
+add_trailing_char() {
+    path="$1"
+
+    last_char="${path#"${path%?}"}"
+    if [ "$last_char" != "/" ]; then
+        path="$path/"
+    fi
+
+    printf "%s" "$path"
+}
+
 parse_args "$@"
 validate_args
 
-printf "Starting with input[%s] output[%s]\n" "$input_dir" "$output_dir"
+output_dir=$(add_trailing_char "$output_dir")
+input_dir=$(add_trailing_char "$input_dir")
 
+printf "Starting with input[%s] output[%s]\n" "$input_dir" "$output_dir"
 rsync -av --exclude="._*" --exclude="*.DS_Store*" "$input_dir" "$output_dir"
 
