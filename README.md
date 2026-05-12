@@ -23,7 +23,8 @@ photo_date_marshaller.sh on this directory.  That script needs its own output
 directory.  
 * Use photo_rsync.sh to merge the output of photo_date_marshaller.sh with the output
 of MetaSort.  Take care to select the corret parent directory for both required
-options to the script.  This may be necessary for Photos and Videos.
+options to the script.  This may be necessary for Photos and Videos. The input and
+output directories provided should contain the YYYY directories at the next level.
 * If photo_date_marshaller.sh fails on any phots you will need to resolve them
 manually.
 
@@ -32,6 +33,5 @@ This section describes how to add a directory of photos that were not generated 
 google takeout.
 * As described above, run the photo_extension_fixer.sh on the input directory.
 * As described above, run the photo_date_marshaller.sh on the input directory.
-* Move/merge the directories onto the /Volumes/T7/photos/photos and
-/Volumes/T7/photos/videos directories.
+* As described above, run the photo_rsync.sh to merge.
 
