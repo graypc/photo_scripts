@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 print_help() {
     # "Date/Time Original              : 2021:05:06 17:32:59"
@@ -92,14 +92,12 @@ IFS=$'\n'
 input_array=($input_photos)
 
 for photo in "${input_array[@]}"; do
-    result="Processing"
-
-    res=$(exiftool -overwrite_original -DateTimeOriginal="$date_original" "$photo")
-    if [ "$?" -ne "0" ]; then
-        printf "%s\n" "$result"
-        print_error "Unable to set original date"
+    exiftool -overwrite_original -ExifIFD:DateTimeOriginal="$date_original" "$photo" && res=0 || res=$?
+    if [ "${res}" -ne "0" ]; then
+        print_error "Unable to set original date for {$photo}"
         continue
     fi
+    printf "Successfully set original date for [%s]\n" "$photo"
 done
 
 exit 0
