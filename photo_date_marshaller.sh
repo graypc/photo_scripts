@@ -7,7 +7,8 @@ print_help() {
     printf "\thttps://github.com/iamsanmith/MetaSort\n"
     printf "Input photos to this script do not have associated metadata files so MetaSort\n"
     printf "cannot process them.\n"
-    printf "If the creation date/time is available from exif the photo is moved, not coppied.\n"
+    printf "If the creation date/time is available from exif the photo is coppied.\n"
+    printf "the original remains.\n"
     printf "If the creation date/time is not availalbe in the photo is left.\n"
     printf "Two inputs are required\n"
     printf "\t-i <input_directory>.  Subdirectories are allowed.\n"
@@ -114,9 +115,6 @@ printf "Starting with input[%s] output[%s]\n" "$input_dir" "$output_dir"
 # Trim '/' char if it exists.
 output_dir=${output_dir%/}
 
-# Clean the output directory.
-rm -rf "${output_dir}"/*
-
 # Assuming this is running on a mac.
 res=$(dot_clean "$input_dir")
 if [ "$?" -ne "0" ]; then
@@ -156,12 +154,10 @@ for photo in "${input_array[@]}"; do
 
     # Get the creation date from the file.
     if [ "$extension" = "mp4" ] || [ "$extension" = "MP4" ]; then 
-        datetime=$(exiftool -CreateDate "$photo")
         subdir="videos"
-    else
-        datetime=$(exiftool -DateTimeOriginal "$photo")
     fi
 
+    datetime=$(exiftool -DateTimeOriginal "$photo")
     if [ "$?" -ne "0" ]; then
         printf "%s\n" "$result"
         print_error "Unable to get DateTimeOriginal with exiftool"
@@ -187,14 +183,14 @@ for photo in "${input_array[@]}"; do
     month=$(convert_month "$month")
     if [ -z "$month" ]; then
         printf "%s\n" "$result"
-        print_error "Invalid month."
+        print_error "Invalid month. [%s]" "$month"
         continue
     fi
 
     result="$result Year[$year] Month[$month]"
 
     mkdir -p "$output_dir/$subdir/$year/$month"
-    mv "$photo" "$output_dir/$subdir/$year/$month/$photo_name"
+    cp "$photo" "$output_dir/$subdir/$year/$month/$photo_name"
     printf "%s\n" "$result"
 done
 
